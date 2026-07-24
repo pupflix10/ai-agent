@@ -5,6 +5,9 @@ on:
     - cron: '0 0,12 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   hunt:
     runs-on: ubuntu-latest
@@ -26,9 +29,9 @@ jobs:
         run: |
           python main.py --scan
 
-      - name: Commit & Push New Opportunity Dossiers to Repository
+      - name: Save Generated Dossiers
         run: |
           git config --global user.name "AI Opportunity Hunter Agent"
           git config --global user.email "agent@antigravity.ai"
           git add dossiers/ || true
-          git diff --quiet && git diff --staged --quiet || (git commit -m "auto: New $10M+ Opportunity Dossiers Generated" && git push)
+          git diff --quiet && git diff --staged --quiet || git commit -m "auto: New $10M+ Opportunity Dossiers Generated" || true
