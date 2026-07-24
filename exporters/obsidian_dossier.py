@@ -1,7 +1,8 @@
 """
 Obsidian Opportunity Dossier Exporter
 Exports detailed market research, competitive gap analysis, financial projections,
-and AI MVP execution plans directly to Obsidian Second Brain under `02 My Businesses/Opportunities/`.
+and AI MVP execution plans directly to Obsidian Second Brain under `02 My Businesses/Opportunities/`
+or local `./dossiers/` directory when running in cloud environments (e.g. GitHub Actions).
 """
 
 import os
@@ -14,8 +15,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class ObsidianDossierExporter:
-    def __init__(self, target_dir: str = "/Users/a1/Documents/Second Brain/Second Brain/02 My Businesses/Opportunities"):
-        self.target_dir = target_dir
+    def __init__(self, target_dir: str = None):
+        default_obsidian = "/Users/a1/Documents/Second Brain/Second Brain/02 My Businesses/Opportunities"
+        
+        # Check if local Obsidian folder exists or can be created; otherwise fallback to ./dossiers
+        if target_dir:
+            self.target_dir = target_dir
+        else:
+            try:
+                os.makedirs(default_obsidian, exist_ok=True)
+                self.target_dir = default_obsidian
+            except (PermissionError, OSError):
+                fallback = os.path.join(os.path.dirname(__file__), "..", "dossiers")
+                os.makedirs(fallback, exist_ok=True)
+                self.target_dir = fallback
+
         os.makedirs(self.target_dir, exist_ok=True)
 
     def _sanitize_filename(self, text: str) -> str:
@@ -104,7 +118,7 @@ status: open-dossier
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
 
-        logger.info(f"Obsidian dossier saved successfully to {filepath}")
+        logger.info(f"Dossier saved successfully to {filepath}")
         return filepath
 
 if __name__ == "__main__":

@@ -2,9 +2,8 @@ name: 🚀 AI Opportunity Hunter 24/7 Cloud Agent
 
 on:
   schedule:
-    # Runs twice a day (every 12 hours) at 00:00 and 12:00 UTC
     - cron: '0 0,12 * * *'
-  workflow_dispatch: # Allows manual 1-click trigger from GitHub website anytime
+  workflow_dispatch:
 
 jobs:
   hunt:
@@ -27,9 +26,9 @@ jobs:
         run: |
           python main.py --scan
 
-      - name: Commit & Push New Obsidian Dossiers to Repository
+      - name: Commit & Push New Opportunity Dossiers to Repository
         run: |
           git config --global user.name "AI Opportunity Hunter Agent"
           git config --global user.email "agent@antigravity.ai"
-          git add exporters/ .
+          git add dossiers/ || true
           git diff --quiet && git diff --staged --quiet || (git commit -m "auto: New $10M+ Opportunity Dossiers Generated" && git push)
