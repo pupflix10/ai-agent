@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Command Center | Multi-Agent Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-brain-circuit"></i>
+                </div>
+                <div class="logo-text">
+                    <h2>ANTIGRAVITY</h2>
+                    <span>Agent Command Center</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#overview" class="nav-item active" data-tab="overview">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Overview</span>
+                </a>
+                <a href="#agents" class="nav-item" data-tab="agents">
+                    <i class="fa-solid fa-robot"></i>
+                    <span>Agent Fleet</span>
+                    <span class="badge" id="agent-count-badge">4</span>
+                </a>
+                <a href="#notifications" class="nav-item" data-tab="notifications">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>WhatsApp Alerts</span>
+                    <span class="badge badge-alert" id="alert-count-badge">2</span>
+                </a>
+                <a href="#opportunities" class="nav-item" data-tab="opportunities">
+                    <i class="fa-solid fa-gem"></i>
+                    <span>$10M+ Opportunities</span>
+                </a>
+                <a href="#obsidian" class="nav-item" data-tab="obsidian">
+                    <i class="fa-solid fa-book-bookmark"></i>
+                    <span>Obsidian Vault</span>
+                </a>
+            </nav>
+
+            <div class="system-status-widget">
+                <div class="status-header">
+                    <span class="pulse-dot"></span>
+                    <span>System Status: <strong>ACTIVE</strong></span>
+                </div>
+                <div class="status-detail">
+                    <span>Next Scan: <strong id="countdown">05h 42m</strong></span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header Bar -->
+            <header class="top-header">
+                <div class="header-title">
+                    <h1 id="page-title">Executive AI Command Center</h1>
+                    <p id="page-subtitle">Real-time monitoring for automated business opportunity hunting & agent fleet operations.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="btn-trigger-scan">
+                        <i class="fa-solid fa-rotate-right"></i> Run Scan Now
+                    </button>
+                    <button class="btn btn-primary" id="btn-add-agent">
+                        <i class="fa-solid fa-plus"></i> Add New Agent
+                    </button>
+                </div>
+            </header>
+
+            <!-- Metrics Overview Bar -->
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon icon-purple">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-label">Active AI Agents</span>
+                        <h3 class="metric-value" id="stat-active-agents">4</h3>
+                        <span class="metric-trend positive"><i class="fa-solid fa-arrow-up"></i> 100% Operational</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon icon-emerald">
+                        <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-label">Signals Evaluated</span>
+                        <h3 class="metric-value" id="stat-evaluated">128</h3>
+                        <span class="metric-trend positive"><i class="fa-solid fa-bolt"></i> +24 today</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon icon-pink">
+                        <i class="fa-solid fa-bell"></i>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-label">Immediate WhatsApp Alerts</span>
+                        <h3 class="metric-value" id="stat-alerts">2</h3>
+                        <span class="metric-trend warning"><i class="fa-solid fa-star"></i> Score > 8.5/10</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon icon-amber">
+                        <i class="fa-solid fa-vault"></i>
+                    </div>
+                    <div class="metric-data">
+                        <span class="metric-label">Obsidian Dossiers</span>
+                        <h3 class="metric-value" id="stat-dossiers">4</h3>
+                        <span class="metric-trend positive"><i class="fa-solid fa-folder-check"></i> Synced to Vault</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content 1: Overview & Fleet -->
+            <div class="tab-content active" id="tab-overview">
+                <!-- Fleet Grid -->
+                <div class="section-header">
+                    <h2><i class="fa-solid fa-cubes-stacked"></i> AI Agent Fleet</h2>
+                    <span class="section-subtitle">Manage, scale, and add future AI agents to your autonomous network.</span>
+                </div>
+
+                <div class="agent-grid" id="agent-grid-container">
+                    <!-- Dynamic Agent Cards rendered via app.js -->
+                </div>
+
+                <!-- Live Notifications Feed Section -->
+                <div class="dashboard-columns">
+                    <div class="column-main">
+                        <div class="card-panel">
+                            <div class="panel-header">
+                                <h3><i class="fa-brands fa-whatsapp"></i> Live WhatsApp Notification Feed</h3>
+                                <button class="btn btn-sm btn-outline" id="btn-send-test-whatsapp">
+                                    <i class="fa-solid fa-paper-plane"></i> Send Test WhatsApp
+                                </button>
+                            </div>
+                            <div class="whatsapp-feed" id="whatsapp-feed-container">
+                                <!-- WhatsApp alert list -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column-side">
+                        <div class="card-panel">
+                            <div class="panel-header">
+                                <h3><i class="fa-solid fa-gem"></i> Top $10M+ Opportunities</h3>
+                            </div>
+                            <div class="top-opportunities-list" id="opportunities-list-container">
+                                <!-- Opportunities list -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content 2: Obsidian Sync -->
+            <div class="tab-content" id="tab-obsidian">
+                <div class="card-panel">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-book-bookmark"></i> Obsidian Second Brain Vault Integration</h3>
+                        <span class="path-badge"><i class="fa-regular fa-folder"></i> /02 My Businesses/Opportunities/</span>
+                    </div>
+                    <div class="obsidian-files-list" id="obsidian-files-container">
+                        <!-- Rendered Obsidian Dossier Files -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Adding Future Agents -->
+    <div class="modal-overlay" id="add-agent-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-robot"></i> Register New AI Agent</h3>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <form id="add-agent-form">
+                <div class="form-group">
+                    <label>Agent Name</label>
+                    <input type="text" id="agent-name" placeholder="e.g. Competitor Price Intelligence Agent" required>
+                </div>
+                <div class="form-group">
+                    <label>Agent Category / Role</label>
+                    <select id="agent-role">
+                        <option value="Market Research">Market Research & Trend Hunter</option>
+                        <option value="Lead Generation">Outbound Lead Generation</option>
+                        <option value="Operations">Operations & Compliance Auditor</option>
+                        <option value="Customer Success">Voice & Customer Support AI</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Schedule Interval</label>
+                    <select id="agent-interval">
+                        <option value="Every 2 Hours">Every 2 Hours</option>
+                        <option value="Every 6 Hours">Every 6 Hours (Default)</option>
+                        <option value="Daily">Daily</option>
+                        <option value="Immediate Alert Only">Immediate Alert Only</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Target Webhook / Notification Channel</label>
+                    <input type="text" id="agent-channel" placeholder="WhatsApp (+1234567890) or Obsidian Dossier" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Deploy Agent</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

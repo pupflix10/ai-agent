@@ -1,0 +1,148 @@
+"""
+Email Notification Bridge — Zero 3rd-Party APIs, 100% Free
+Sends opportunity alerts via Gmail SMTP using Python's built-in smtplib.
+No API keys required — uses your existing Gmail account with an App Password.
+"""
+
+import smtplib
+import logging
+import os
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from typing import Dict, Any, List
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+
+class EmailNotifier:
+    def __init__(self, sender_email: str = None, app_password: str = None, recipient_email: str = None):
+        self.sender_email = sender_email or os.getenv("NOTIFY_EMAIL_FROM", "")
+        self.app_password = app_password or os.getenv("NOTIFY_EMAIL_PASSWORD", "")
+        self.recipient_email = recipient_email or os.getenv("NOTIFY_EMAIL_TO", "")
+
+    def format_immediate_alert(self, opp: Dict[str, Any]) -> tuple:
+        """Format urgent high-score opportunity as HTML email."""
+        scores = opp.get("scores", {})
+        subject = f"🚨 IMMEDIATE OPPORTUNITY [{scores.get('composite')}/10] — {opp.get('title')[:60]}"
+        html = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #0f172a; color: #f8fafc; padding: 32px; border-radius: 12px;">
+            <div style="background: linear-gradient(135deg, #6366f1, #ec4899); padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+                <h1 style="margin:0; font-size: 20px;">🚨 IMMEDIATE OPPORTUNITY ALERT</h1>
+                <p style="margin:4px 0 0 0; opacity:0.85;">AI Business Opportunity Hunter — Score: <strong>{scores.get('composite')}/10</strong></p>
+            </div>
+
+            <h2 style="color:#818cf8; font-size:18px;">{opp.get('title')}</h2>
+
+            <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+                <tr>
+                    <td style="padding:10px; background:#1e293b; border-radius:6px; margin:4px;">
+                        <div style="color:#94a3b8; font-size:12px;">MARKET GAP SCORE</div>
+                        <div style="font-size:22px; font-weight:800; color:#ec4899;">{scores.get('composite')}/10</div>
+                    </td>
+                    <td style="width:12px;"></td>
+                    <td style="padding:10px; background:#1e293b; border-radius:6px;">
+                        <div style="color:#94a3b8; font-size:12px;">2-YEAR ARR POTENTIAL</div>
+                        <div style="font-size:16px; font-weight:700; color:#10b981;">{opp.get('financial_projection')}</div>
+                    </td>
+                    <td style="width:12px;"></td>
+                    <td style="padding:10px; background:#1e293b; border-radius:6px;">
+                        <div style="color:#94a3b8; font-size:12px;">BUILD EFFORT</div>
+                        <div style="font-size:14px; font-weight:600; color:#f59e0b;">{opp.get('build_effort')}</div>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="background:#1e293b; padding:16px; border-radius:8px; margin-bottom:16px; border-left: 4px solid #6366f1;">
+                <div style="color:#94a3b8; font-size:12px; margin-bottom:6px;">🎯 THE PROBLEM / MARKET DEMAND</div>
+                <p style="margin:0; line-height:1.6;">{opp.get('description')}</p>
+            </div>
+
+            <div style="background:#1e293b; padding:16px; border-radius:8px; margin-bottom:16px; border-left: 4px solid #10b981;">
+                <div style="color:#94a3b8; font-size:12px; margin-bottom:6px;">🛠️ SUGGESTED MVP EXECUTION PLAN</div>
+                <p style="margin:0; line-height:1.6;">{opp.get('suggested_mvp_concept')}</p>
+            </div>
+
+            <div style="background:#1e293b; padding:12px; border-radius:8px; font-size:12px; color:#64748b;">
+                Source: {opp.get('source')} | Antigravity AI Opportunity Hunter
+            </div>
+        </div>
+        """
+        return subject, html
+
+    def format_bidaily_digest(self, opps: List[Dict[str, Any]]) -> tuple:
+        """Format 48-hour digest as HTML email."""
+        subject = f"📊 Bi-Daily AI Opportunity Digest — {len(opps)} Opportunities Found"
+        rows = ""
+        for idx, opp in enumerate(opps[:5], 1):
+            scores = opp.get("scores", {})
+            rows += f"""
+            <div style="background:#1e293b; padding:16px; border-radius:8px; margin-bottom:12px; border-left:4px solid {'#ec4899' if idx == 1 else '#6366f1'};">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <strong style="font-size:15px;">{idx}. {opp.get('title')}</strong>
+                    <span style="background:#6366f1; color:#fff; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:700;">{scores.get('composite')}/10</span>
+                </div>
+                <div style="color:#10b981; font-size:13px; margin-bottom:4px;">📈 {opp.get('financial_projection')}</div>
+                <div style="color:#94a3b8; font-size:12px;">{opp.get('suggested_mvp_concept')[:140]}...</div>
+            </div>
+            """
+
+        html = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #0f172a; color: #f8fafc; padding: 32px; border-radius: 12px;">
+            <div style="background: linear-gradient(135deg, #6366f1, #10b981); padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+                <h1 style="margin:0; font-size: 20px;">📊 Bi-Daily AI Opportunity Digest</h1>
+                <p style="margin:4px 0 0 0; opacity:0.85;">Top {len(opps)} high-demand, undersupplied opportunities from the last 48 hours</p>
+            </div>
+            {rows}
+            <div style="background:#1e293b; padding:12px; border-radius:8px; font-size:12px; color:#64748b; margin-top:16px;">
+                Full research dossiers saved to Obsidian Second Brain → 02 My Businesses/Opportunities/
+            </div>
+        </div>
+        """
+        return subject, html
+
+    def send(self, subject: str, html_body: str) -> bool:
+        """Send email via Gmail SMTP — built-in Python, no libraries needed."""
+        if not all([self.sender_email, self.app_password, self.recipient_email]):
+            logger.warning("Email credentials not configured yet. Set NOTIFY_EMAIL_FROM, NOTIFY_EMAIL_PASSWORD, NOTIFY_EMAIL_TO.")
+            print(f"\n📧 [EMAIL PREVIEW]\nTo: {self.recipient_email or 'not set'}\nSubject: {subject}\n")
+            return False
+
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = self.sender_email
+            msg["To"] = self.recipient_email
+            msg.attach(MIMEText(html_body, "html"))
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(self.sender_email, self.app_password)
+                server.sendmail(self.sender_email, self.recipient_email, msg.as_string())
+
+            logger.info(f"✅ Email sent successfully to {self.recipient_email}")
+            return True
+        except Exception as e:
+            logger.error(f"Email send failed: {e}")
+            return False
+
+    def send_immediate_alert(self, opp: Dict[str, Any]) -> bool:
+        subject, html = self.format_immediate_alert(opp)
+        return self.send(subject, html)
+
+    def send_bidaily_digest(self, opps: List[Dict[str, Any]]) -> bool:
+        subject, html = self.format_bidaily_digest(opps)
+        return self.send(subject, html)
+
+
+if __name__ == "__main__":
+    notifier = EmailNotifier()
+    sample_opp = {
+        "title": "Automated Regulatory Compliance Auditor for AI Native Startups",
+        "description": "High demand among EU & US fintech startups struggling with manual EU AI Act & HIPAA audit preparation. Enterprise tools cost $50k+/year.",
+        "financial_projection": "$10M - $25M ARR in 24 months",
+        "build_effort": "Low-Medium (AI Agent Orchestration)",
+        "source": "G2 Reviews & Upwork Data",
+        "scores": {"composite": 9.27},
+        "suggested_mvp_concept": "Build an Agentic Compliance Auditor connecting to GitHub, AWS/GCP, and PostgreSQL to auto-generate EU AI Act & SOC2 audit reports."
+    }
+    notifier.send_immediate_alert(sample_opp)

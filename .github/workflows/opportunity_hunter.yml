@@ -1,0 +1,35 @@
+name: 🚀 AI Opportunity Hunter 24/7 Cloud Agent
+
+on:
+  schedule:
+    # Runs twice a day (every 12 hours) at 00:00 and 12:00 UTC
+    - cron: '0 0,12 * * *'
+  workflow_dispatch: # Allows manual 1-click trigger from GitHub website anytime
+
+jobs:
+  hunt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Execute Opportunity Hunt Scan & Send Email Alerts
+        env:
+          NOTIFY_EMAIL_FROM: ${{ secrets.NOTIFY_EMAIL_FROM }}
+          NOTIFY_EMAIL_PASSWORD: ${{ secrets.NOTIFY_EMAIL_PASSWORD }}
+          NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
+        run: |
+          python main.py --scan
+
+      - name: Commit & Push New Obsidian Dossiers to Repository
+        run: |
+          git config --global user.name "AI Opportunity Hunter Agent"
+          git config --global user.email "agent@antigravity.ai"
+          git add exporters/ .
+          git diff --quiet && git diff --staged --quiet || (git commit -m "auto: New $10M+ Opportunity Dossiers Generated" && git push)
