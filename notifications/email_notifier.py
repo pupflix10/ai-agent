@@ -17,18 +17,32 @@ logger = logging.getLogger(__name__)
 
 class EmailNotifier:
     def __init__(self, sender_email: str = None, app_password: str = None, recipient_email: str = None):
-        self.sender_email = sender_email or os.getenv("NOTIFY_EMAIL_FROM", "")
-        self.app_password = app_password or os.getenv("NOTIFY_EMAIL_PASSWORD", "")
-        self.recipient_email = recipient_email or os.getenv("NOTIFY_EMAIL_TO", "")
+        self.sender_email = sender_email or self._load_env_var("NOTIFY_EMAIL_FROM")
+        self.app_password = app_password or self._load_env_var("NOTIFY_EMAIL_PASSWORD")
+        self.recipient_email = recipient_email or self._load_env_var("NOTIFY_EMAIL_TO")
+
+    def _load_env_var(self, key: str) -> str:
+        """Load variable from environment or .env file."""
+        val = os.getenv(key, "")
+        if val:
+            return val
+        env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+        if os.path.exists(env_path):
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith(f"{key}="):
+                        return line.split("=", 1)[1].strip().strip('"').strip("'")
+        return ""
 
     def format_immediate_alert(self, opp: Dict[str, Any]) -> tuple:
         """Format urgent high-score opportunity as HTML email."""
         scores = opp.get("scores", {})
-        subject = f"🚨 IMMEDIATE OPPORTUNITY [{scores.get('composite')}/10] — {opp.get('title')[:60]}"
+        subject = f"🚨 UNICORN B2B OPPORTUNITY [{scores.get('composite')}/10] — {opp.get('title')[:60]}"
         html = f"""
         <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #0f172a; color: #f8fafc; padding: 32px; border-radius: 12px;">
             <div style="background: linear-gradient(135deg, #6366f1, #ec4899); padding: 20px; border-radius: 8px; margin-bottom: 24px;">
-                <h1 style="margin:0; font-size: 20px;">🚨 IMMEDIATE OPPORTUNITY ALERT</h1>
+                <h1 style="margin:0; font-size: 20px;">🚨 UNICORN B2B OPPORTUNITY ALERT</h1>
                 <p style="margin:4px 0 0 0; opacity:0.85;">AI Business Opportunity Hunter — Score: <strong>{scores.get('composite')}/10</strong></p>
             </div>
 
@@ -91,7 +105,7 @@ class EmailNotifier:
         <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #0f172a; color: #f8fafc; padding: 32px; border-radius: 12px;">
             <div style="background: linear-gradient(135deg, #6366f1, #10b981); padding: 20px; border-radius: 8px; margin-bottom: 24px;">
                 <h1 style="margin:0; font-size: 20px;">📊 Bi-Daily AI Opportunity Digest</h1>
-                <p style="margin:4px 0 0 0; opacity:0.85;">Top {len(opps)} high-demand, undersupplied opportunities from the last 48 hours</p>
+                <p style="margin:4px 0 0 0; opacity:0.85;">Top {len(opps)} high-demand B2B opportunities from the last 48 hours</p>
             </div>
             {rows}
             <div style="background:#1e293b; padding:12px; border-radius:8px; font-size:12px; color:#64748b; margin-top:16px;">
@@ -102,24 +116,27 @@ class EmailNotifier:
         return subject, html
 
     def send(self, subject: str, html_body: str) -> bool:
-        """Send email via Gmail SMTP — built-in Python, no libraries needed."""
-        if not all([self.sender_email, self.app_password, self.recipient_email]):
-            logger.warning("Email credentials not configured yet. Set NOTIFY_EMAIL_FROM, NOTIFY_EMAIL_PASSWORD, NOTIFY_EMAIL_TO.")
-            print(f"\n📧 [EMAIL PREVIEW]\nTo: {self.recipient_email or 'not set'}\nSubject: {subject}\n")
+        """Send email via Gmail SMTP."""
+        sender = self.sender_email or self._load_env_var("NOTIFY_EMAIL_FROM")
+        password = self.app_password or self._load_env_var("NOTIFY_EMAIL_PASSWORD")
+        recipient = self.recipient_email or self._load_env_var("NOTIFY_EMAIL_TO")
+
+        if not all([sender, password, recipient]):
+            logger.warning("Email credentials incomplete. Skipping email dispatch.")
             return False
 
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = self.sender_email
-            msg["To"] = self.recipient_email
+            msg["From"] = sender
+            msg["To"] = recipient
             msg.attach(MIMEText(html_body, "html"))
 
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                server.login(self.sender_email, self.app_password)
-                server.sendmail(self.sender_email, self.recipient_email, msg.as_string())
+                server.login(sender, password)
+                server.sendmail(sender, recipient, msg.as_string())
 
-            logger.info(f"✅ Email sent successfully to {self.recipient_email}")
+            logger.info(f"✅ Email sent successfully to {recipient}")
             return True
         except Exception as e:
             logger.error(f"Email send failed: {e}")
@@ -133,16 +150,6 @@ class EmailNotifier:
         subject, html = self.format_bidaily_digest(opps)
         return self.send(subject, html)
 
-
 if __name__ == "__main__":
     notifier = EmailNotifier()
-    sample_opp = {
-        "title": "Automated Regulatory Compliance Auditor for AI Native Startups",
-        "description": "High demand among EU & US fintech startups struggling with manual EU AI Act & HIPAA audit preparation. Enterprise tools cost $50k+/year.",
-        "financial_projection": "$10M - $25M ARR in 24 months",
-        "build_effort": "Low-Medium (AI Agent Orchestration)",
-        "source": "G2 Reviews & Upwork Data",
-        "scores": {"composite": 9.27},
-        "suggested_mvp_concept": "Build an Agentic Compliance Auditor connecting to GitHub, AWS/GCP, and PostgreSQL to auto-generate EU AI Act & SOC2 audit reports."
-    }
-    notifier.send_immediate_alert(sample_opp)
+    print("Email notifier initialized.")
