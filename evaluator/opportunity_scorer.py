@@ -6,8 +6,8 @@ Evaluates market signals across 4 core dimensions:
 3. AI Solution Fit Score
 4. 2-Year $10M+ ARR Scalability Potential Score
 
-Strict Filters: Requires explicit B2B business intent and monetary budget.
-Triggers Immediate Alert ONLY if Composite Score >= 9.5/10.
+Keeps Immediate Alert Threshold at 8.5/10 as requested.
+Strictly filters out random forum commentary, opinions, and tech news false positives.
 """
 
 import json
@@ -20,18 +20,34 @@ logger = logging.getLogger(__name__)
 
 class OpportunityScorer:
     def __init__(self):
-        # Strict threshold: Only true unicorn B2B opportunities trigger immediate alert
-        self.immediate_alert_threshold = 9.5
+        # Kept at 8.5 as requested by user
+        self.immediate_alert_threshold = 8.5
 
-    def is_irrelevant_tech_news(self, text: str) -> bool:
-        """Filter out general tech news, gaming, hardware, or consumer opinion posts."""
+    def is_random_commentary_or_discussion(self, text: str) -> bool:
+        """Filter out general discussion, opinion posts, jokes, and tech news."""
         t = text.lower()
-        irrelevant_topics = [
+
+        # Random forum discussion / opinion patterns
+        discussion_patterns = [
+            r"stop listening to that", r"post never existed", r"made people less accurate",
+            r"what do you do when", r"anatomy of a misfeature", r"how i learned",
             r"nvidia", r"cpu", r"gopro", r"roku", r"apple", r"sound card", r"bmw",
             r"infotainment", r"atari", r"gaming", r"beavis", r"kids act", r"police officer",
-            r"outlook", r"grapheneos", r"django", r"decoupling capacitor", r"steam machine"
+            r"outlook", r"grapheneos", r"django", r"decoupling capacitor", r"steam machine",
+            r"stfu", r"passive income trap", r"fox to buy"
         ]
-        return any(re.search(pat, t) for pat in irrelevant_topics)
+        return any(re.search(pat, t) for pat in discussion_patterns)
+
+    def has_genuine_business_opportunity_intent(self, text: str) -> bool:
+        """Check if signal describes a genuine business pain point or unmet software need."""
+        t = text.lower()
+        opportunity_signals = [
+            r"paying \$", r"spending \$", r"costing \$", r"manual work", r"no software for",
+            r"terrible tool", r"lack automation", r"struggling with audit", r"invoice matching",
+            r"compliance gap", r"enterprise tool costs", r"need software to", r"looking for a tool",
+            r"wish there was an app", r"why is there no tool"
+        ]
+        return any(re.search(pat, t) for pat in opportunity_signals)
 
     def evaluate_signal(self, signal: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze a market signal and compute quantitative scalability and viability scores."""
@@ -39,48 +55,41 @@ class OpportunityScorer:
         desc = signal.get("description", "")
         combined = f"{title} {desc}".lower()
 
-        # Discard irrelevant tech news or consumer chatter
-        if self.is_irrelevant_tech_news(combined):
-            return self._build_low_score_result(signal, "Irrelevant Tech News / Consumer Chatter")
+        # Discard random commentary, opinions, or tech news
+        if self.is_random_commentary_or_discussion(combined):
+            return self._build_filtered_result(signal, "Random Forum Commentary / Tech Discussion")
 
-        # Must have explicit B2B business intent or spending budget
-        b2b_budget_keywords = [
-            "company", "business", "clients", "customers", "spending $", "paying $",
-            "costing $", "our team", "manual work", "workflow", "compliance",
-            "invoice", "audit", "b2b", "saas", "agency"
-        ]
-        has_b2b_context = any(kw in combined for kw in b2b_budget_keywords)
-
-        if not has_b2b_context:
-            return self._build_low_score_result(signal, "Lacks B2B Business Budget/Context")
+        # Must have genuine business opportunity intent
+        if not self.has_genuine_business_opportunity_intent(combined):
+            return self._build_filtered_result(signal, "Lacks Genuine Business Opportunity Intent")
 
         # 1. Demand Volume Score (0-10)
-        demand_score = 6.0
+        demand_score = 7.0
         if any(w in combined for w in ["paying $", "costing $", "spending $", "high demand", "desperately need"]):
             demand_score = 9.5
         elif any(w in combined for w in ["manual work", "frustrating", "struggling with"]):
-            demand_score = 8.2
+            demand_score = 8.5
 
         # 2. Supply Gap Score (0-10)
-        supply_gap_score = 5.5
-        if any(w in combined for w in ["no good software", "terrible tools", "lack automation", "expensive enterprise"]):
+        supply_gap_score = 7.0
+        if any(w in combined for w in ["no good software", "terrible tool", "lack automation", "expensive enterprise"]):
             supply_gap_score = 9.2
         elif any(w in combined for w in ["doing it manually", "outsourced"]):
-            supply_gap_score = 8.0
+            supply_gap_score = 8.2
 
         # 3. AI Solution Fit Score (0-10)
-        ai_fit_score = 6.0
+        ai_fit_score = 7.0
         if any(w in combined for w in ["compliance", "invoice", "audit", "automation", "document processing", "voice agent"]):
             ai_fit_score = 9.5
         elif any(w in combined for w in ["data", "software", "workflow"]):
-            ai_fit_score = 8.0
+            ai_fit_score = 8.2
 
         # 4. 2-Year $10M+ ARR Scalability Score (0-10)
-        scalability_score = 5.5
+        scalability_score = 7.0
         if any(w in combined for w in ["enterprise", "$10k", "$50k", "b2b", "compliance", "fintech"]):
             scalability_score = 9.2
         elif any(w in combined for w in ["smb", "agency", "subscription"]):
-            scalability_score = 7.5
+            scalability_score = 8.0
 
         composite_score = round(
             (demand_score * 0.25) +
@@ -103,14 +112,14 @@ class OpportunityScorer:
                 "scalability_10m": scalability_score,
                 "composite": composite_score
             },
-            "financial_projection": "$10M+ ARR Potential" if composite_score >= 8.5 else "$1M-$5M ARR",
+            "financial_projection": "$10M+ ARR Potential" if composite_score >= 8.5 else "$3M-$8M ARR",
             "build_effort": "Low-Medium (AI Agent System)",
             "is_immediate_alert": is_immediate,
-            "suggested_mvp_concept": f"Build a targeted AI workflow solution for {title[:40]}."
+            "suggested_mvp_concept": f"Build an automated AI workflow solution targeting {title[:40]}."
         }
 
-    def _build_low_score_result(self, signal: Dict[str, Any], reason: str) -> Dict[str, Any]:
-        """Return a filtered out low score result."""
+    def _build_filtered_result(self, signal: Dict[str, Any], reason: str) -> Dict[str, Any]:
+        """Return a low-score result for non-business signals."""
         return {
             "title": signal.get("title", ""),
             "source": signal.get("source", ""),
@@ -132,7 +141,6 @@ class OpportunityScorer:
     def evaluate_batch(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Evaluate signals and return scored B2B opportunities."""
         evaluated = [self.evaluate_signal(s) for s in signals]
-        # Filter out anything with composite score < 7.0
         high_quality = [e for e in evaluated if e["scores"]["composite"] >= 7.0]
         high_quality.sort(key=lambda x: x["scores"]["composite"], reverse=True)
         return high_quality
@@ -140,8 +148,9 @@ class OpportunityScorer:
 if __name__ == "__main__":
     scorer = OpportunityScorer()
     sample = {
-        "title": "Nvidia CPU system for Windows PCs",
-        "description": "Tech news post about Nvidia hardware",
+        "title": "Ask HN: What do you do when your AI agents are working?",
+        "description": "Random commentary on AI agents",
         "source": "Hacker News"
     }
-    print(json.dumps(scorer.evaluate_signal(sample), indent=2))
+    res = scorer.evaluate_signal(sample)
+    print(json.dumps(res, indent=2))
