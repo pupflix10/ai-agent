@@ -26,12 +26,14 @@ jobs:
           NOTIFY_EMAIL_FROM: ${{ secrets.NOTIFY_EMAIL_FROM }}
           NOTIFY_EMAIL_PASSWORD: ${{ secrets.NOTIFY_EMAIL_PASSWORD }}
           NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
         run: |
           python main.py --scan
 
-      - name: Save Generated Dossiers
+      - name: Save Generated Dossiers & Persistent Deduplication History
         run: |
           git config --global user.name "AI Opportunity Hunter Agent"
           git config --global user.email "agent@antigravity.ai"
-          git add dossiers/ || true
-          git diff --quiet && git diff --staged --quiet || git commit -m "auto: New $10M+ Opportunity Dossiers Generated" || true
+          git add processed_history.json dossiers/ || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "auto: Save processed opportunity history & dossiers" && git push) || true

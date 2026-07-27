@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AI Business Opportunity Hunter Agent — Main CLI Entry Point
+AI Business Opportunity Hunter Agent & Lead Gen Pipeline CLI Entry Point
 Email notifications via Gmail SMTP (Zero 3rd-Party APIs)
 """
 
@@ -63,7 +63,7 @@ def main():
     parser.add_argument("--stop", action="store_true", help="Stop the background AI Agent")
     parser.add_argument("--start", action="store_true", help="Start the background AI Agent")
     parser.add_argument("--test-email", action="store_true", help="Send a test email notification")
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
 
     if args.status:
         check_agent_status()
@@ -101,7 +101,7 @@ def main():
 
     top = results.get("top_opportunity")
     print("\n✅ HUNT CYCLE COMPLETED SUCCESSFULLY!")
-    print(f"• Total Opportunities Evaluated: {results['total_evaluated']}")
+    print(f"• Total Evaluated: {results['total_evaluated']}")
     print(f"• Immediate Email Alerts Sent: {results['immediate_alerts_sent']}")
     print(f"• Obsidian Dossiers Exported: {results['dossiers_created']}")
 
